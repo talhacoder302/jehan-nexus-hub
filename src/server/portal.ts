@@ -22,8 +22,12 @@ export interface PortalContext {
  * pinned to their own client; staff choose one with the switcher (stored in a cookie and re-checked
  * against their access on every request).
  */
-export const getPortalContext = cache(async (): Promise<PortalContext | null> => {
-  const user = await requireUser();
+export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
+  getPortalContextFor(await requireUser()),
+);
+
+/** Same as getPortalContext for an already-verified user (API routes use this; no redirects). */
+export async function getPortalContextFor(user: SessionUser): Promise<PortalContext | null> {
   await connectDB();
   const requested =
     user.role === "client" ? null : (await cookies()).get(PORTAL_CLIENT_COOKIE)?.value;
@@ -48,7 +52,7 @@ export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
     },
     switcher: user.role === "client" ? [] : await listClientOptions(user),
   };
-});
+}
 
 /** For portal pages: context is required; users without a client see the empty state instead. */
 export async function requirePortalContext(): Promise<PortalContext> {

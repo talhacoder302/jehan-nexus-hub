@@ -226,17 +226,36 @@ async function main() {
           userId: clientUser._id,
           type: "post_pending_approval",
           title: `"${post.title}" is ready for your approval`,
-          link: `/portal/approvals/${post._id.toString()}`,
+          link: `/portal/posts/${post._id.toString()}`,
         });
       }
-      await ActivityLog.create({
-        actorId: manager._id,
-        clientId: client._id,
-        action: "post.created",
-        entity: "post",
-        entityId: post._id,
-        meta: { title: post.title },
-      });
+      const events: { action: string; actor: Types.ObjectId }[] = [
+        { action: "post.created", actor: manager._id },
+      ];
+      if (t.status !== "draft")
+        events.push({ action: "post.sent_for_approval", actor: manager._id });
+      if (approved) events.push({ action: "post.approved", actor: clientUser._id });
+      if (t.status === "changes_requested") {
+        events.push({ action: "post.changes_requested", actor: clientUser._id });
+      }
+      if (t.status === "published") events.push({ action: "post.published", actor: manager._id });
+      await ActivityLog.insertMany(
+        events.map((e, n) => ({
+          actorId: e.actor,
+          clientId: client._id,
+          action: e.action,
+          entity: "post",
+          entityId: post._id,
+          meta: { title: post.title },
+          // Workflow events always sit in the past, in order, even for future posts.
+          createdAt: new Date(
+            Math.min(
+              scheduledAt.getTime() - (8 - n * 2) * DAY,
+              Date.now() - (events.length - n) * 5 * 60 * 60 * 1000,
+            ),
+          ),
+        })),
+      );
     }
 
     // 60 days of campaign-level insights ending yesterday.
