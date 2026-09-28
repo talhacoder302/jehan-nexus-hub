@@ -1,0 +1,6 @@
+﻿allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false
+minimumReleaseAgeExclude:
+  - "@img/sharp-linux-arm@0.35.5"
