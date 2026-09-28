@@ -323,3 +323,196 @@ export async function addComment(
     author: { id: user.id, name: user.name, role: user.role, image: user.image },
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Admin: create, edit and move posts through the approval workflow.  */
+/* ------------------------------------------------------------------ */
+
+export interface AdminPostListItem extends PostSummary {
+  clientName: string;
+  overdue: boolean;
+  commentCount: number;
+}
+
+/** Past its scheduled time but not yet approved or published. */
+export function isOverdue(p: { scheduledAt: Date | string; status: PostStatus }, now = new Date()) {
+  return new Date(p.scheduledAt) < now && !["approved", "published"].includes(p.status);
+}
+
+export async function listAdminPosts(
+  user: SessionUser,
+  visibleClientIds: Types.ObjectId[],
+  filters: { clientId?: string; status?: PostStatus },
+): Promise<AdminPostListItem[]> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  await connectDB();
+  const requested = filters.clientId;
+  const clientFilter =
+    requested && visibleClientIds.some((id) => id.equals(requested))
+      ? oid(requested)
+      : { $in: visibleClientIds };
+  const posts = await Post.find({
+    clientId: clientFilter,
+    ...(filters.status ? { status: filters.status } : {}),
+  })
+    .sort({ scheduledAt: -1 })
+    .limit(200)
+    .lean();
+  const [clients, comments] = await Promise.all([
+    Client.find(
+      { _id: { $in: [...new Set(posts.map((p) => p.clientId.toString()))] } },
+      { name: 1 },
+    ).lean(),
+    Comment.aggregate<{ _id: Types.ObjectId; n: number }>([
+      { $match: { postId: { $in: posts.map((p) => p._id) } } },
+      { $group: { _id: "$postId", n: { $sum: 1 } } },
+    ]),
+  ]);
+  const names = new Map(clients.map((c) => [c._id.toString(), c.name]));
+  const counts = new Map(comments.map((c) => [c._id.toString(), c.n]));
+  const now = new Date();
+  return posts.map((p) => ({
+    ...toPostSummary(p),
+    clientName: names.get(p.clientId.toString()) ?? "",
+    overdue: isOverdue(p, now),
+    commentCount: counts.get(p._id.toString()) ?? 0,
+  }));
+}
+
+export interface PostWriteValues {
+  clientId: string;
+  title: string;
+  caption: string;
+  platforms: Platform[];
+  mediaUrls: string[];
+  scheduledAt: string;
+}
+
+export async function createPost(user: SessionUser, values: PostWriteValues): Promise<string> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  await connectDB();
+  await assertClientAccess(user, values.clientId);
+  const post = await Post.create({
+    clientId: oid(values.clientId),
+    title: values.title,
+    caption: values.caption,
+    platforms: values.platforms,
+    mediaUrls: values.mediaUrls,
+    scheduledAt: new Date(values.scheduledAt),
+    status: "draft",
+    createdBy: oid(user.id),
+  });
+  await logActivity({
+    actorId: user.id,
+    clientId: post.clientId,
+    action: "post.created",
+    entity: "post",
+    entityId: post._id,
+    meta: { title: post.title },
+  });
+  return post._id.toString();
+}
+
+/**
+ * Edits content. Published posts are locked. Changing an approved post invalidates the approval
+ * (back to draft) so content the client hasn't seen can never go out as "approved".
+ */
+export async function updatePost(
+  user: SessionUser,
+  postId: string,
+  values: PostWriteValues,
+): Promise<void> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  const post = await loadAuthorizedPost(user, postId);
+  if (post.status === "published") throw new PostServiceError("Published posts can't be edited.");
+  if (values.clientId !== post.clientId.toString()) {
+    throw new PostServiceError("A post can't be moved to another client.");
+  }
+  post.title = values.title;
+  post.caption = values.caption;
+  post.platforms = values.platforms;
+  post.mediaUrls = values.mediaUrls;
+  post.scheduledAt = new Date(values.scheduledAt);
+  if (post.status === "approved" && post.isModified()) {
+    post.status = "draft";
+    post.approvedBy = null;
+    post.approvedAt = null;
+  }
+  await post.save();
+  await logActivity({
+    actorId: user.id,
+    clientId: post.clientId,
+    action: "post.updated",
+    entity: "post",
+    entityId: post._id,
+    meta: { title: post.title },
+  });
+}
+
+export async function sendForApproval(user: SessionUser, postId: string): Promise<void> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  const post = await loadAuthorizedPost(user, postId);
+  if (post.status !== "draft" && post.status !== "changes_requested") {
+    throw new PostServiceError(
+      "Only drafts or posts with requested changes can be sent for approval.",
+    );
+  }
+  if (post.status === "changes_requested") post.revisionCount += 1;
+  post.status = "pending_approval";
+  await post.save();
+
+  await logActivity({
+    actorId: user.id,
+    clientId: post.clientId,
+    action: "post.sent_for_approval",
+    entity: "post",
+    entityId: post._id,
+    meta: { title: post.title, revision: post.revisionCount },
+  });
+  await notifyUsers(await clientUserIds(post.clientId), {
+    type: "post_pending_approval",
+    title: `"${post.title}" is ready for your approval`,
+    link: `/portal/posts/${post._id.toString()}`,
+    email: {
+      subject: `Please review: ${post.title}`,
+      body: `A ${post.revisionCount ? "revised " : ""}post scheduled for ${post.scheduledAt.toUTCString()} is ready for your review. Approve it or request changes in your portal.`,
+      cta: "Review post",
+    },
+  });
+}
+
+export async function markPublished(user: SessionUser, postId: string): Promise<void> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  const post = await loadAuthorizedPost(user, postId);
+  if (post.status !== "approved") {
+    throw new PostServiceError("Only approved posts can be marked as published.");
+  }
+  post.status = "published";
+  await post.save();
+  await logActivity({
+    actorId: user.id,
+    clientId: post.clientId,
+    action: "post.published",
+    entity: "post",
+    entityId: post._id,
+    meta: { title: post.title },
+  });
+}
+
+export async function deletePost(user: SessionUser, postId: string): Promise<void> {
+  if (!isStaff(user.role)) throw new AuthorizationError();
+  const post = await loadAuthorizedPost(user, postId);
+  if (post.status === "published") {
+    throw new PostServiceError("Published posts are kept for reporting and can't be deleted.");
+  }
+  await Comment.deleteMany({ postId: post._id });
+  await post.deleteOne();
+  await logActivity({
+    actorId: user.id,
+    clientId: post.clientId,
+    action: "post.deleted",
+    entity: "post",
+    entityId: post._id,
+    meta: { title: post.title },
+  });
+}

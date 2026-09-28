@@ -19,22 +19,22 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-interface BaseProps<T extends FieldValues> {
-  control: Control<T>;
+interface BaseProps<T extends FieldValues, TOut extends FieldValues = T> {
+  control: Control<T, unknown, TOut>;
   name: FieldPath<T>;
   label: ReactNode;
   description?: ReactNode;
   className?: string;
 }
 
-export function TextField<T extends FieldValues>({
+export function TextField<T extends FieldValues, TOut extends FieldValues = T>({
   control,
   name,
   label,
   description,
   className,
   ...inputProps
-}: BaseProps<T> & Omit<ComponentProps<typeof Input>, "name" | "value" | "onChange" | "onBlur">) {
+}: BaseProps<T, TOut> & Omit<ComponentProps<typeof Input>, "name" | "value" | "onChange" | "onBlur">) {
   const id = useId();
   return (
     <Controller
@@ -58,14 +58,14 @@ export function TextField<T extends FieldValues>({
   );
 }
 
-export function TextareaField<T extends FieldValues>({
+export function TextareaField<T extends FieldValues, TOut extends FieldValues = T>({
   control,
   name,
   label,
   description,
   className,
   ...inputProps
-}: BaseProps<T> & Omit<ComponentProps<typeof Textarea>, "name" | "value" | "onChange" | "onBlur">) {
+}: BaseProps<T, TOut> & Omit<ComponentProps<typeof Textarea>, "name" | "value" | "onChange" | "onBlur">) {
   const id = useId();
   return (
     <Controller
@@ -89,7 +89,7 @@ export function TextareaField<T extends FieldValues>({
   );
 }
 
-export function SelectField<T extends FieldValues>({
+export function SelectField<T extends FieldValues, TOut extends FieldValues = T>({
   control,
   name,
   label,
@@ -98,7 +98,7 @@ export function SelectField<T extends FieldValues>({
   options,
   placeholder,
   disabled,
-}: BaseProps<T> & {
+}: BaseProps<T, TOut> & {
   options: readonly { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
