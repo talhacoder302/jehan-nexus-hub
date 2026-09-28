@@ -11,3 +11,9 @@ Choices made where the brief was ambiguous or the tooling differed from what it 
 7. **pnpm 12 build-script allowlist.** `pnpm-workspace.yaml` allows `esbuild` install scripts (needed by `tsx` and Vitest). `sharp` stays disabled because Vercel provides image optimization.
 8. **Dark-first theme.** `next-themes` defaults to dark, with a light-mode toggle. System preference is not followed, so the brand look stays consistent.
 9. **Fonts.** Geist (body) and Sora (headings) via `next/font`, both self-hosted at build time.
+10. **JWT sessions, re-checked against the database.** Auth.js uses the JWT strategy (required for Credentials). Every server page, action and API route also re-reads the user from MongoDB once per request (`getSessionUser`), so disabling a user or changing their role takes effect immediately rather than when the token expires.
+11. **Manager scope.** Admins see every client. Managers see only clients whose `assignedManagers` include them, and can invite, disable and enable client users for those clients only. Client users are always pinned to their own `clientId`. Any client id in a URL, cookie or form is ignored for them.
+12. **Google sign-in is invite-only.** Google can only sign in existing (invited or active) users, matched by email. It never creates accounts.
+13. **Invite links without email.** When Resend isn't configured, the invite dialog shows the one-time link so staff can share it manually. Password reset links are written to the server log instead.
+14. **Staff portal preview.** Staff can open `/portal` and pick a client with a switcher. The choice is stored in an httpOnly cookie and re-validated on every request.
+15. **Password policy.** At least 10 characters, including at least one letter and one number.
