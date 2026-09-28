@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { publicEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 

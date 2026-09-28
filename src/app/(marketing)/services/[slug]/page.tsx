@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/marketing/json-ld";
 import { PageHeader, Section, SectionHeading } from "@/components/marketing/section";
 import { ServiceIcon } from "@/components/marketing/service-icon";
 import { getService, services } from "@/content/services";
-import { publicEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 import { siteConfig } from "@/lib/site";
 
 export const dynamicParams = false;

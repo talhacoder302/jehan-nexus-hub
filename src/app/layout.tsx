@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { publicEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 

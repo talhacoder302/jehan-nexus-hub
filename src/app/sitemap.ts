@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { caseStudies } from "@/content/case-studies";
 import { services } from "@/content/services";
-import { publicEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = publicEnv.siteUrl;

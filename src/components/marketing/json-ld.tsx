@@ -1,4 +1,4 @@
-import { publicEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 import { siteConfig } from "@/lib/site";
 
 /** Renders a JSON-LD script. `<` is escaped so content can never break out of the script tag. */

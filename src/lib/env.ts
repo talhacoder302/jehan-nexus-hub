@@ -1,3 +1,4 @@
+import "server-only";
 import { z } from "zod";
 
 /**
@@ -72,13 +73,3 @@ export function features() {
 }
 
 export type Features = ReturnType<typeof features>;
-
-/**
- * Public (browser-safe) values. Each NEXT_PUBLIC_ variable must be referenced literally so
- * Next.js can inline it at build time.
- */
-export const publicEnv = {
-  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, ""),
-  pusherKey: process.env.NEXT_PUBLIC_PUSHER_KEY || undefined,
-  pusherCluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || undefined,
-} as const;
