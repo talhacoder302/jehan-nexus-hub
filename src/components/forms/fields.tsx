@@ -34,7 +34,8 @@ export function TextField<T extends FieldValues, TOut extends FieldValues = T>({
   description,
   className,
   ...inputProps
-}: BaseProps<T, TOut> & Omit<ComponentProps<typeof Input>, "name" | "value" | "onChange" | "onBlur">) {
+}: BaseProps<T, TOut> &
+  Omit<ComponentProps<typeof Input>, "name" | "value" | "onChange" | "onBlur">) {
   const id = useId();
   return (
     <Controller
@@ -65,7 +66,8 @@ export function TextareaField<T extends FieldValues, TOut extends FieldValues = 
   description,
   className,
   ...inputProps
-}: BaseProps<T, TOut> & Omit<ComponentProps<typeof Textarea>, "name" | "value" | "onChange" | "onBlur">) {
+}: BaseProps<T, TOut> &
+  Omit<ComponentProps<typeof Textarea>, "name" | "value" | "onChange" | "onBlur">) {
   const id = useId();
   return (
     <Controller
