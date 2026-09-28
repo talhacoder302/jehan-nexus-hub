@@ -54,6 +54,7 @@ export function AppShell({
   area,
   homeHref,
   topbar,
+  actions,
   footer,
   children,
 }: {
@@ -61,6 +62,8 @@ export function AppShell({
   area: string;
   homeHref: string;
   topbar?: ReactNode;
+  /** Rendered at the right of the header, before the theme toggle. */
+  actions?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -102,6 +105,7 @@ export function AppShell({
             </SheetContent>
           </Sheet>
           <div className="flex min-w-0 flex-1 items-center gap-2">{topbar}</div>
+          {actions}
           <ThemeToggle />
         </header>
         <main id="main" className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

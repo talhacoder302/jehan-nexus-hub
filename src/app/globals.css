@@ -121,7 +121,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.62 0.21 280);
-  --chart-1: oklch(0.65 0.2 280);
+  --chart-1: #7b72f0; /* validated for the dark chart surface (dataviz lightness band) */
   --chart-2: oklch(0.68 0.22 305);
   --chart-3: oklch(0.72 0.13 200);
   --chart-4: oklch(0.8 0.15 75);

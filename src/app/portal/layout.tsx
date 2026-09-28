@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell, type NavItem } from "@/components/app-shell/app-shell";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
 import { UserMenu } from "@/components/app-shell/user-menu";
 import { ClientSwitcher } from "@/components/portal/client-switcher";
 import { countPendingApprovals } from "@/server/posts";
@@ -42,6 +43,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
       area="Portal"
       homeHref="/portal"
       topbar={topbar}
+      actions={<NotificationBell userId={user.id} />}
       footer={<UserMenu user={user} settingsHref="/portal/settings" />}
     >
       {children}

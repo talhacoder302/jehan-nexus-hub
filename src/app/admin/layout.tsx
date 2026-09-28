@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell, type NavItem } from "@/components/app-shell/app-shell";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
 import { UserMenu } from "@/components/app-shell/user-menu";
 import { requireStaffPage } from "@/server/permissions";
 
@@ -23,6 +24,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
       nav={nav}
       area="Admin"
       homeHref="/admin"
+      actions={<NotificationBell userId={user.id} />}
       footer={<UserMenu user={user} settingsHref="/portal/settings" />}
     >
       {children}
