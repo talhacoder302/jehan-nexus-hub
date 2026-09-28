@@ -4,15 +4,19 @@ config({ path: ".env.local", quiet: true });
 config({ path: ".env", quiet: true });
 
 /**
- * Picks the database for CLI scripts. `--target=production` uses MONGODB_URI_PRODUCTION so the
+ * Picks the database for CLI scripts. `--target=production` uses MONGODB_URI_PRODUCTION (or MONGODB_URI_PROD) so the
  * Atlas cluster can be seeded from a laptop without swapping the local URI.
  */
 export function scriptMongoUri(): string {
   const production = process.argv.includes("--target=production");
-  const uri = production ? process.env.MONGODB_URI_PRODUCTION : process.env.MONGODB_URI;
+  const uri = production
+    ? (process.env.MONGODB_URI_PRODUCTION ?? process.env.MONGODB_URI_PROD)
+    : process.env.MONGODB_URI;
   if (!uri) {
     throw new Error(
-      production ? "MONGODB_URI_PRODUCTION is not set in .env.local" : "MONGODB_URI is not set",
+      production
+        ? "MONGODB_URI_PRODUCTION (or MONGODB_URI_PROD) is not set in .env.local"
+        : "MONGODB_URI is not set",
     );
   }
   return uri;
