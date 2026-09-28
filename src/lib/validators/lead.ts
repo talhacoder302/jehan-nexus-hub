@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BUDGET_OPTIONS, LEAD_STATUSES, SERVICE_OPTIONS } from "@/lib/constants";
+import { emailField } from "./auth";
 
 const optionalText = (max: number) =>
   z
@@ -11,7 +12,7 @@ const optionalText = (max: number) =>
 
 export const contactSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(120),
-  email: z.email("Please enter a valid email").trim().toLowerCase().max(200),
+  email: emailField("Please enter a valid email"),
   phone: optionalText(40),
   company: optionalText(120),
   service: z.enum(SERVICE_OPTIONS, { error: "Choose a service" }),

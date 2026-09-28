@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CLIENT_PLANS, CLIENT_STATUSES } from "@/lib/constants";
-import { objectId } from "./auth";
+import { emailField, objectId } from "./auth";
 
 const hex = z
   .string()
@@ -68,11 +68,10 @@ export const clientFormSchema = z.object({
     .or(z.literal("").transform(() => undefined)),
   industry: optionalText(80),
   contactEmail: z
-    .email("Enter a valid email")
-    .trim()
-    .toLowerCase()
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
+    .literal("")
+    .transform(() => undefined)
+    .or(emailField())
+    .optional(),
   brandPrimary: hex,
   brandSecondary: hex,
   metaAdAccountIds: adAccountIdsSchema,

@@ -3,6 +3,10 @@ import { USER_ROLES } from "@/lib/constants";
 
 export const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid id");
 
+/** Trims and lowercases before validating, so pasted addresses with stray spaces are accepted. */
+export const emailField = (message = "Enter a valid email") =>
+  z.string().trim().toLowerCase().max(200).pipe(z.email(message));
+
 export const passwordSchema = z
   .string()
   .min(10, "Use at least 10 characters")
@@ -10,13 +14,13 @@ export const passwordSchema = z
   .refine((v) => /[a-zA-Z]/.test(v) && /\d/.test(v), "Include at least one letter and one number");
 
 export const loginSchema = z.object({
-  email: z.email("Enter a valid email").trim().toLowerCase(),
+  email: emailField(),
   password: z.string().min(1, "Enter your password").max(128),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const forgotPasswordSchema = z.object({
-  email: z.email("Enter a valid email").trim().toLowerCase(),
+  email: emailField(),
 });
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
@@ -50,7 +54,7 @@ export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
 export const inviteUserSchema = z
   .object({
     name: z.string().trim().min(2, "Enter a name").max(120),
-    email: z.email("Enter a valid email").trim().toLowerCase(),
+    email: emailField(),
     role: z.enum(USER_ROLES),
     clientId: objectId.optional().or(z.literal("").transform(() => undefined)),
   })
